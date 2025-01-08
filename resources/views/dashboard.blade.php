@@ -87,8 +87,9 @@
                 <button id="addEmploymentBtn" class="mb-3 btn btn-primary">Add Employment</button>
 
                 <!-- Employment Form (Initially Hidden) -->
-                <form id="employmentForm" method="POST" action="{{ route('employment.store') }}" class="d-none">
+                <form id="employmentForm" class="d-none">
                     @csrf
+                    <input type="hidden" id="employmentId" name="employment_id">
                     <!-- Employer Name -->
                     <div class="form-group">
                         <label for="employer_name">Employer Name</label>
@@ -131,7 +132,7 @@
                         <input type="date" name="start_date" id="start_date" class="form-control" required>
                     </div>
 
-                    <button type="submit" class="btn btn-success">Add Employment</button>
+                    <button type="submit" class="btn btn-success">Save Employment</button>
                 </form>
 
                 <!-- Employment History Table (Initially Shown) -->
@@ -158,28 +159,22 @@
     $(document).ready(function () {
         // Handle Profile Form Submission
         $('#profileForm').on('submit', function (e) {
-            e.preventDefault(); // Prevent the default form submission
+            e.preventDefault();
 
-            // Reset message area
             $('#profileMessage').removeClass('alert-success alert-danger').addClass('d-none');
-
-            // Create a FormData object to handle file uploads
             let formData = new FormData(this);
 
-            // AJAX request
             $.ajax({
-                url: '{{ route("profile.update") }}', // The route for updating the profile
+                url: '{{ route("profile.update") }}',
                 type: 'POST',
                 data: formData,
-                processData: false, // Important for FormData
-                contentType: false, // Important for FormData
-                success: function (response) {
-                    // Success feedback
+                processData: false,
+                contentType: false,
+                success: function () {
                     $('#profileMessage').removeClass('d-none').addClass('alert-success').text('Profile updated successfully!');
-                    location.reload(); // Reload the page to reflect the updated profile picture
+                    location.reload();
                 },
                 error: function (xhr) {
-                    // Error handling
                     let errors = xhr.responseJSON.errors;
                     let errorHtml = '<ul>';
                     for (let key in errors) {
@@ -201,7 +196,7 @@
                             <td>${entry.employer_name}</td>
                             <td>${entry.position}</td>
                             <td>
-                                <a href="{{ url('employment-history/details/${entry.id}') }}" class="btn btn-sm btn-primary">Details</a>
+                                <button class="btn btn-sm btn-primary editEmployment" data-id="${entry.id}">Edit</button>
                                 <button class="btn btn-sm btn-danger deleteEmployment" data-id="${entry.id}">Delete</button>
                             </td>
                         </tr>
@@ -213,35 +208,64 @@
 
         loadEmploymentHistory();
 
-        // Toggle form visibility when "Add Employment" button is clicked
-        $('#addEmploymentBtn').on('click', function() {
-            $('#employmentForm').toggleClass('d-none'); // Toggle the form visibility
-            $('#employmentTable').toggleClass('d-none'); // Toggle the table visibility
+        // Toggle Employment Form
+        $('#addEmploymentBtn').on('click', function () {
+            $('#employmentForm').toggleClass('d-none');
+            $('#employmentTable').toggleClass('d-none');
             $(this).text($(this).text() === 'Add Employment' ? 'Back to Employment History' : 'Add Employment');
         });
 
         // Handle Employment Form Submission
-        $('#employmentForm').on('submit', function(e) {
+        $('#employmentForm').on('submit', function (e) {
             e.preventDefault();
 
-            // Reset message area
             $('#employmentMessage').removeClass('alert-success alert-danger').addClass('d-none');
+            let id = $('#employmentId').val();
+            let url = id ? `{{ url('employment-history/update') }}/${id}` : '{{ route("employment.store") }}';
 
-            $.post($(this).attr('action'), $(this).serialize(), function(response) {
-                $('#employmentTable').removeClass('d-none'); // Show the table
-                $('#employmentForm').addClass('d-none'); // Hide the form
-                loadEmploymentHistory(); // Reload employment history
-                $('#addEmploymentBtn').text('Add Employment'); // Reset button text
+            let method = id ? 'PUT' : 'POST';
 
-                // Success message
-                $('#employmentMessage').removeClass('d-none').addClass('alert-success').text('Employment record added successfully!');
-            }).fail(function() {
-                $('#employmentMessage').removeClass('d-none').addClass('alert-danger').text('Error adding employment. Please try again.');
+            $.ajax({
+                url: url,
+                type: method,
+                data: $(this).serialize(),
+                success: function () {
+                    loadEmploymentHistory();
+                    $('#employmentForm').addClass('d-none');
+                    $('#employmentTable').removeClass('d-none');
+                    $('#addEmploymentBtn').text('Add Employment');
+                    $('#employmentMessage').removeClass('d-none').addClass('alert-success').text('Employment record saved successfully!');
+                    $('#employmentForm')[0].reset();
+                    $('#employmentId').val('');
+                },
+                error: function () {
+                    $('#employmentMessage').removeClass('d-none').addClass('alert-danger').text('Error saving employment. Please try again.');
+                }
             });
         });
 
-        // Delete Employment
-        $(document).on('click', '.deleteEmployment', function () {
+        // Edit Employment
+        $(document).on('click', '.editEmployment', function () {
+            let id = $(this).data('id');
+
+            $.get(`{{ url('employment-history') }}/${id}`, function (data) {
+                $('#employmentId').val(data.id);
+                $('#employer_name').val(data.employer_name);
+                $('#position').val(data.position);
+                $('#occupation').val(data.occupation);
+                $('#manager_name').val(data.manager_name);
+                $('#manager_email').val(data.manager_email);
+                $('#manager_phone').val(data.manager_phone);
+                $('#start_date').val(data.start_date);
+
+                $('#employmentForm').removeClass('d-none');
+                $('#employmentTable').addClass('d-none');
+                $('#addEmploymentBtn').text('Back to Employment History');
+            });
+        });
+
+                // Delete Employment
+                $(document).on('click', '.deleteEmployment', function () {
             if (confirm('Are you sure?')) {
                 let id = $(this).data('id');
 

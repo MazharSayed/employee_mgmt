@@ -100,10 +100,12 @@ class EmploymentHistoryController extends Controller
     /**
      * Details of an employment history record.
      */
-    public function details($id)
+    public function edit($id)
     {
         $employment = EmploymentHistory::find($id);
-        return view('employment_details', compact('employment'));
+        return response()->json($employment);
+        // return $employment;
+        // return view('employment_details', compact('employment'));
     }
 
 }

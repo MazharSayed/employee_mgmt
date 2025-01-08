@@ -26,10 +26,11 @@ Route::middleware('auth')->group(function () {
 
     // Employment history routes
     Route::get('/employment-history', [EmploymentHistoryController::class, 'index'])->name('employment.index');
+    Route::get('/employment-history/{id}', [EmploymentHistoryController::class, 'edit'])->name('employment.edit');
     Route::post('/employment-history/add', [EmploymentHistoryController::class, 'store'])->name('employment.store');
-    Route::post('/employment-history/update', [EmploymentHistoryController::class, 'update'])->name('employment.update');
+    Route::put('employment-history/update/{id}', [EmploymentHistoryController::class, 'update'])->name('employment.update');
     Route::delete('/employment-history/delete/{id}', [EmploymentHistoryController::class, 'destroy'])->name('employment.destroy');
-    Route::get('/employment-history/details/{id}', [EmploymentHistoryController::class, 'details'])->name('employment.details');
+    // Route::get('/employment-history/details/{id}', [EmploymentHistoryController::class, 'details'])->name('employment.details');
 
 });
 
